@@ -1,3 +1,4 @@
+require "sequel"
 require "sequel-devise/version"
 require 'sequel/plugins/devise'
 require 'orm_adapter-sequel'

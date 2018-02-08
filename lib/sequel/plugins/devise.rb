@@ -71,7 +71,7 @@ module Sequel
           include OverrideFixes
         end
 
-        Model::HOOKS.reject { |hook| hook == :after_commit }.each do |hook|
+        ::Sequel::Model::HOOKS.reject { |hook| hook == :after_commit }.each do |hook|
           define_method(hook) do |method = nil, options = {}, &block|
             if Symbol === (if_method = options[:if])
               orig_block = block

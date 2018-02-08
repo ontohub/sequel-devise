@@ -15,6 +15,7 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.version       = Sequel::Devise::VERSION
 
+  gem.add_dependency 'sequel', '>= 3.11.0'
   gem.add_dependency 'devise'
   gem.add_dependency 'orm_adapter-sequel'
 end
