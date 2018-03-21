@@ -6,6 +6,9 @@ module Sequel
         model.plugin :hook_class_methods # Devise requires a before_validation
         model.plugin :dirty # email_changed?
         model.plugin :validation_class_methods # for using validatable module
+
+        # for Devise::Models::Trackable
+        model.send :alias_method, :new_record?, :new?
       end
 
       module InstanceMethods
