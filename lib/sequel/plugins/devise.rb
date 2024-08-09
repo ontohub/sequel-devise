@@ -48,7 +48,7 @@ module Sequel
         private
 
         def devise_safe_values
-          values.delete_if{|k, v| devise_safe_keys.include?(k) || k =~ /password/i }
+          values.dup.delete_if{|k, v| devise_safe_keys.include?(k) || k =~ /password/i }
         end
 
         def devise_safe_keys
