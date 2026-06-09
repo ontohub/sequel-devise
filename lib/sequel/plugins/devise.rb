@@ -52,7 +52,13 @@ module Sequel
         end
 
         def devise_safe_keys
-          ::Devise::Models::Authenticatable::UNSAFE_ATTRIBUTES_FOR_SERIALIZATION
+          authenticatable = ::Devise::Models::Authenticatable
+
+          if authenticatable.const_defined?(:UNSAFE_ATTRIBUTES_FOR_SERIALIZATION)
+            authenticatable::UNSAFE_ATTRIBUTES_FOR_SERIALIZATION
+          else
+            authenticatable::BLACKLIST_FOR_SERIALIZATION
+          end
         end
       end
 
@@ -60,6 +66,41 @@ module Sequel
 
         def human_attribute_name(key)
           key.to_s
+        end
+
+        def validates_length_of(*atts)
+          opts = {
+            nil_message:  'is not present',
+            too_long:     'is too long',
+            too_short:    'is too short',
+            wrong_length: 'is the wrong length'
+          }.merge!(extract_options!(atts))
+
+          opts[:tag] ||= ([:length] + [:maximum, :minimum, :is, :within].reject { |x| !opts.include?(x) }).join('-').to_sym
+          reflect_validation(:length, opts, atts)
+          atts << opts
+
+          validates_each(*atts) do |o, a, v|
+            if opts.include?(:maximum)
+              m = devise_validation_value(opts[:maximum])
+              o.errors.add(a, opts[:message] || (v ? opts[:too_long] : opts[:nil_message])) unless v && v.size <= m
+            end
+
+            if opts.include?(:minimum)
+              m = devise_validation_value(opts[:minimum])
+              o.errors.add(a, opts[:message] || opts[:too_short]) unless v && v.size >= m
+            end
+
+            if opts.include?(:is)
+              i = devise_validation_value(opts[:is])
+              o.errors.add(a, opts[:message] || opts[:wrong_length]) unless v && v.size == i
+            end
+
+            if opts.include?(:within)
+              w = devise_validation_value(opts[:within])
+              o.errors.add(a, opts[:message] || opts[:wrong_length]) unless v && w.public_send(w.respond_to?(:cover?) ? :cover? : :include?, v.size)
+            end
+          end
         end
 
         module OverrideFixes
@@ -123,6 +164,12 @@ module Sequel
           else
             send :after_save, commit_method
           end
+        end
+
+        private
+
+        def devise_validation_value(value)
+          value.respond_to?(:call) ? value.call : value
         end
       end
     end
